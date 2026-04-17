@@ -3,7 +3,7 @@
 
 import grpc
 
-import kvstore_pb2 as src_dot_kvstore__pb2
+import src.kvstore_pb2 as src_dot_kvstore__pb2
 
 GRPC_GENERATED_VERSION = "1.80.0"
 GRPC_VERSION = grpc.__version__

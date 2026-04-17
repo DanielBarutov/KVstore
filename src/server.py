@@ -5,8 +5,8 @@ from concurrent import futures
 
 import grpc
 
-import kvstore_pb2
-import kvstore_pb2_grpc
+import src.kvstore_pb2
+import src.kvstore_pb2_grpc
 
 
 MAX_KEYS = 10
@@ -86,7 +86,7 @@ class InMemoryKVStore:
             return result
 
 
-class KeyValueStoreServicer(kvstore_pb2_grpc.KeyValueStoreServicer):
+class KeyValueStoreServicer(src.kvstore_pb2_grpc.KeyValueStoreServicer):
     def __init__(self, store: InMemoryKVStore) -> None:
         self.store = store
 
@@ -102,7 +102,7 @@ class KeyValueStoreServicer(kvstore_pb2_grpc.KeyValueStoreServicer):
             context.abort(grpc.StatusCode.INVALID_ARGUMENT, "ttl_seconds must be >= 0")
 
         self.store.put(key=key, value=value, ttl_seconds=ttl_seconds)
-        return kvstore_pb2.PutResponse()
+        return src.kvstore_pb2.PutResponse()
 
     def Get(self, request, context):
         key = request.key
@@ -114,7 +114,7 @@ class KeyValueStoreServicer(kvstore_pb2_grpc.KeyValueStoreServicer):
         if value is None:
             context.abort(grpc.StatusCode.NOT_FOUND, f"key '{key}' not found")
 
-        return kvstore_pb2.GetResponse(value=value)
+        return src.kvstore_pb2.GetResponse(value=value)
 
     def Delete(self, request, context):
         key = request.key
@@ -123,14 +123,16 @@ class KeyValueStoreServicer(kvstore_pb2_grpc.KeyValueStoreServicer):
             context.abort(grpc.StatusCode.INVALID_ARGUMENT, "key must not be empty")
 
         self.store.delete(key)
-        return kvstore_pb2.DeleteResponse()
+        return src.kvstore_pb2.DeleteResponse()
 
     def List(self, request, context):
         prefix = request.prefix
         items = self.store.list_by_prefix(prefix)
 
-        return kvstore_pb2.ListResponse(
-            items=[kvstore_pb2.KeyValue(key=key, value=value) for key, value in items]
+        return src.kvstore_pb2.ListResponse(
+            items=[
+                src.kvstore_pb2.KeyValue(key=key, value=value) for key, value in items
+            ]
         )
 
 
@@ -138,7 +140,7 @@ def serv() -> None:
     server = grpc.server(futures.ThreadPoolExecutor(max_workers=10))
     store = InMemoryKVStore(capacity=MAX_KEYS)
 
-    kvstore_pb2_grpc.add_KeyValueStoreServicer_to_server(
+    src.kvstore_pb2_grpc.add_KeyValueStoreServicer_to_server(
         KeyValueStoreServicer(store),
         server,
     )
